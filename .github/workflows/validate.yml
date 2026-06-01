@@ -14,43 +14,76 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Validate workflow JSON is parseable
+      - name: Validate all JSON files are parseable
         run: |
-          echo "Validating workflow JSON structure..."
+          echo "Validating all JSON files in repository..."
           python3 -c "
-          import json, sys
-          with open('chatgpt-usage-report-workflow.json', 'r') as f:
-              data = json.load(f)
-          print('JSON is valid and parseable')
-          print(f'Workflow name: {data.get(\"name\", \"unnamed\")}')
+          import json, glob, sys
+          files = glob.glob('**/*.json', recursive=True)
+          if not files:
+              print('WARNING: No JSON files found in repository')
+              sys.exit(1)
+          print(f'Found {len(files)} JSON file(s): {files}')
+          for filepath in files:
+              try:
+                  with open(filepath, 'r') as f:
+                      data = json.load(f)
+                  print(f'PASS: {filepath} is valid JSON')
+              except json.JSONDecodeError as e:
+                  print(f'FAIL: {filepath} is invalid JSON - {e}')
+                  sys.exit(1)
           "
 
-      - name: Check for exposed API keys
+      - name: Check all files for exposed API keys
         run: |
-          echo "Scanning for exposed credentials..."
-          if grep -r "sk-ant-api" . --include="*.json"; then
+          echo "Scanning all files for exposed credentials..."
+          if grep -r "sk-ant-api" . --include="*.json" --include="*.yml" --include="*.yaml" --include="*.txt"; then
             echo "ERROR: Anthropic API key detected in repository"
             exit 1
           else
-            echo "No exposed API keys found - clean"
+            echo "PASS: No exposed API keys found - clean"
           fi
 
-      - name: Verify required n8n nodes are present
+      - name: Verify n8n workflow structure
         run: |
-          echo "Checking required nodes exist in workflow..."
+          echo "Checking n8n workflow nodes across all JSON files..."
           python3 -c "
-          import json
-          with open('chatgpt-usage-report-workflow.json', 'r') as f:
-              data = json.load(f)
-          nodes = [n['type'] for n in data.get('nodes', [])]
-          print(f'Nodes found: {nodes}')
-          required = ['n8n-nodes-base.set', 'n8n-nodes-base.httpRequest']
-          for r in required:
-              if r in nodes:
-                  print(f'PASS: {r} present')
-              else:
-                  print(f'WARN: {r} not found')
+          import json, glob
+          files = glob.glob('**/*.json', recursive=True)
+          for filepath in files:
+              with open(filepath, 'r') as f:
+                  try:
+                      data = json.load(f)
+                  except:
+                      continue
+              if 'nodes' not in data:
+                  print(f'SKIP: {filepath} is not an n8n workflow file')
+                  continue
+              nodes = [n.get('type', '') for n in data.get('nodes', [])]
+              print(f'Nodes found in {filepath}: {nodes}')
+              required = ['n8n-nodes-base.set', 'n8n-nodes-base.httpRequest']
+              for r in required:
+                  if r in nodes:
+                      print(f'PASS: {r} present')
+                  else:
+                      print(f'WARN: {r} not found in {filepath}')
+          "
+
+      - name: Confirm no dummy or test data files
+        run: |
+          echo "Checking for non-workflow JSON files..."
+          python3 -c "
+          import json, glob
+          files = glob.glob('**/*.json', recursive=True)
+          for filepath in files:
+              with open(filepath, 'r') as f:
+                  try:
+                      data = json.load(f)
+                      if 'nodes' not in data and 'name' not in data:
+                          print(f'WARN: {filepath} does not appear to be a valid n8n workflow')
+                  except:
+                      print(f'FAIL: {filepath} is not valid JSON')
           "
 
       - name: All checks passed
-        run: echo "Workflow validation complete - ready for deployment"
+        run: echo "Full validation complete - repository is clean and ready"
