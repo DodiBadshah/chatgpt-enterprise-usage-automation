@@ -1,0 +1,317 @@
+{
+  "name": "My workflow",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "9bf6f16c-40c2-4fe4-9282-5fa00f7b65dc",
+      "name": "Trigger"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "3eb5eb51-b3f0-4a36-8884-b8b897a92a9a",
+              "name": "report_period",
+              "value": "Daily Report",
+              "type": "string"
+            },
+            {
+              "id": "945507ae-cd32-47df-a133-1e2d7faf7d8a",
+              "name": "active_users",
+              "value": 847,
+              "type": "number"
+            },
+            {
+              "id": "75647508-a86e-42ef-be2c-7b0abedea320",
+              "name": "total_messages_sent",
+              "value": 24391,
+              "type": "number"
+            },
+            {
+              "id": "243f1e14-23c1-4af5-8728-349d5af8f0f4",
+              "name": "avg_messages_per_user",
+              "value": 29,
+              "type": "number"
+            },
+            {
+              "id": "62b2e736-6d85-40f5-b7a9-9c5b77262e31",
+              "name": "top_department_1",
+              "value": "Audit & Assurance",
+              "type": "string"
+            },
+            {
+              "id": "a61b55a3-7180-450f-98aa-7bbbac90ea8d",
+              "name": "top_department_2",
+              "value": "Tax Advisory",
+              "type": "string"
+            },
+            {
+              "id": "9f8662bb-3bd7-4959-b801-b310c5e959f9",
+              "name": "top_department_3",
+              "value": "Management Consulting",
+              "type": "string"
+            },
+            {
+              "id": "5b81b8a2-f175-4ca1-a004-b27a37194a3e",
+              "name": "new_users_this_week",
+              "value": 43,
+              "type": "number"
+            },
+            {
+              "id": "0bf0a115-5a10-46df-931a-421d134927ea",
+              "name": "flagged_policy_violations",
+              "value": 2,
+              "type": "number"
+            },
+            {
+              "id": "8db6a440-665b-414f-95dc-b46d4129800d",
+              "name": "model_used",
+              "value": "GPT-4o",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        208,
+        0
+      ],
+      "id": "b4f68d9b-0cb5-42c3-9360-1e74fd7e7c00",
+      "name": "Mock Usage Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "YOUR_ANTHROPIC_API_KEY_HERE"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"messages\": [\n    {\n      \"role\": \"user\",\n      \"content\": \"You are an AI platform administrator assistant. Generate a concise, professional weekly usage report based on this data: Report Period: {{ $json.report_period }}, Active Users: {{ $json.active_users }}, Total Messages Sent: {{ $json.total_messages_sent }}, Avg Messages Per User: {{ $json.avg_messages_per_user }}, Top Departments: {{ $json.top_department_1 }}, {{ $json.top_department_2 }}, {{ $json.top_department_3 }}, New Users This Week: {{ $json.new_users_this_week }}, Flagged Policy Violations: {{ $json.flagged_policy_violations }}, Model Used: {{ $json.model_used }}. Format the report with sections for Executive Summary, Usage Highlights, Department Breakdown, and Risk Flags. Keep it under 300 words.\"\n    }\n  ]\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        416,
+        0
+      ],
+      "id": "a39b0bf1-5abf-448e-9ca7-37d5d239065e",
+      "name": "Claude API - Generate Report"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "4c4f2e01-4168-4afb-b224-8a611f868437",
+              "name": "report_text",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        624,
+        0
+      ],
+      "id": "5d1bd2bd-f05b-4e4f-8ac4-7dcca8d49893",
+      "name": "Extract Report Text"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "18lifGV1-UZyR0SsklnTwSjXfAe_RnqCBvyBbJ-l_Uec",
+          "mode": "list",
+          "cachedResultName": "ChatGPT Enterprise Usage Reports",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18lifGV1-UZyR0SsklnTwSjXfAe_RnqCBvyBbJ-l_Uec/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sheet1",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/18lifGV1-UZyR0SsklnTwSjXfAe_RnqCBvyBbJ-l_Uec/edit#gid=0"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Report Period": "={{ $('Mock Usage Data').item.json.report_period }}",
+            "Date": "={{ $now.toISO() }}",
+            "Active Users": "={{ $('Mock Usage Data').item.json.active_users }}",
+            "Report Summary": "={{ $json.report_text }}"
+          },
+          "matchingColumns": [],
+          "schema": [
+            {
+              "id": "Date",
+              "displayName": "Date",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report Period",
+              "displayName": "Report Period",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Active Users",
+              "displayName": "Active Users",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Report Summary",
+              "displayName": "Report Summary",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        816,
+        144
+      ],
+      "id": "785219bc-25d3-4d6a-97c5-7d6d6b8b20b6",
+      "name": "Output - Google Sheets",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "T8Mz4U9vhLLF0ITn",
+          "name": "Google Sheets OAuth2 API"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "html": "<!DOCTYPE html>\n<html>\n<head>\n  <style>\n    body { font-family: Arial, sans-serif; max-width: 800px; margin: 40px auto; color: #333; }\n    h1 { color: #1a3c5e; border-bottom: 2px solid #1a3c5e; padding-bottom: 10px; }\n    h2 { color: #2c5f8a; margin-top: 30px; }\n    .meta { background: #f0f4f8; padding: 15px; border-radius: 6px; margin-bottom: 20px; }\n    .metric { display: inline-block; margin: 8px 15px 8px 0; }\n    .metric strong { color: #1a3c5e; }\n    .report-body { line-height: 1.8; white-space: pre-wrap; }\n    .footer { margin-top: 40px; font-size: 12px; color: #888; border-top: 1px solid #ddd; padding-top: 10px; }\n  </style>\n</head>\n<body>\n  <h1>ChatGPT Enterprise - Weekly Usage Report</h1>\n  <div class=\"meta\">\n    <div class=\"metric\"><strong>Period:</strong> {{ $json.report_text.split('\\n')[1] }}</div>\n    <div class=\"metric\"><strong>Generated:</strong> {{ $now.toISO() }}</div>\n    <div class=\"metric\"><strong>Active Users:</strong> {{ $('Mock Usage Data').item.json.active_users }}</div>\n    <div class=\"metric\"><strong>Messages Sent:</strong> {{ $('Mock Usage Data').item.json.total_messages_sent }}</div>\n    <div class=\"metric\"><strong>New Users:</strong> {{ $('Mock Usage Data').item.json.new_users_this_week }}</div>\n    <div class=\"metric\"><strong>Policy Violations:</strong> {{ $('Mock Usage Data').item.json.flagged_policy_violations }}</div>\n  </div>\n  <div class=\"report-body\">{{ $json.report_text }}</div>\n  <div class=\"footer\">Generated automatically via n8n + Claude AI | KPMG AI Platform Administration</div>\n</body>\n</html>"
+      },
+      "type": "n8n-nodes-base.html",
+      "typeVersion": 1.2,
+      "position": [
+        800,
+        -160
+      ],
+      "id": "b78889ee-81d1-4a6c-b78e-0f81c844d58c",
+      "name": "Output - HTML Report"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Trigger": {
+      "main": [
+        [
+          {
+            "node": "Mock Usage Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mock Usage Data": {
+      "main": [
+        [
+          {
+            "node": "Claude API - Generate Report",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Claude API - Generate Report": {
+      "main": [
+        [
+          {
+            "node": "Extract Report Text",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract Report Text": {
+      "main": [
+        [
+          {
+            "node": "Output - HTML Report",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "Output - Google Sheets",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Output - HTML Report": {
+      "main": [
+        []
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "versionId": "21c51653-31a3-4ab5-bfe8-16aefd3aabaf",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "41aca29b92ce0f63f538f435f56ae93162dd7bf7f5f17c6077557527d8c73218"
+  },
+  "id": "bbNNovHhU9ZxQHZF",
+  "tags": []
+}
